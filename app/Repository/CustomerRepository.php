@@ -5,6 +5,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use App\Models\Customer;
 use App\Models\NotificationList;
+use App\Models\ItemInformation;
 use App\User;
 use Validator;
 use Illuminate\Support\Facades\Storage;
@@ -12,10 +13,12 @@ use Illuminate\Support\Facades\Storage;
 class CustomerRepository
 {
 
-    public function __construct(Customer $customer, NotificationList $notificationlist)
+    public function __construct(Customer $customer,ItemInformation $itemInformation , NotificationList $notificationlist)
     {
         $this->customer = $customer;
+           $this->itemInformation = $itemInformation;
         $this->notificationlist = $notificationlist;
+
     }
     public function removeCustomer($id)
     {
@@ -24,7 +27,8 @@ class CustomerRepository
             ->where('id', $id)->update(['status' => 2]);
 
     }
-     public function getCustomerByEmail($email)
+   
+    public function getCustomerByEmail($email)
     {
         return $this
             ->customer
@@ -36,17 +40,26 @@ class CustomerRepository
             ->customer
             ->where('id', $id)->first();
     }
+    public function getImageNameByCustomerId($id)
+    {
+        return $this
+            ->itemInformation
+            ->where('customer_id', $id)->first();
+    }
+  
     public function getCustomerUser()
     {
-           return $this->customer->get();
+        return $this
+            ->customer
+            ->get();
     }
     public function getCustomerList()
     {
         return $this
             ->customer
-            ->where('status', '=' ,'0')
-            ->orWhere('status', '=' ,'1')
-            ->orWhere('status', '=' ,'3')
+            ->where('status', '=', '0')
+            ->orWhere('status', '=', '1')
+            ->orWhere('status', '=', '3')
             ->orderBy('id', 'desc')
             ->get();
     }
@@ -62,30 +75,43 @@ class CustomerRepository
             ->customer
             ->where('email', $email)->first();
     }
-
+    
+    public function checkEmailUpdate($email,$id)
+    {
+        return $this
+            ->customer
+            ->where('email', $email)->where('id','!=',$id)->first();
+    }
+    public function checkPhoneUpdate($phone,$id)
+    {
+        return $this
+            ->customer
+            ->where('phone', $phone)->where('id','!=',$id)->first();
+    }
     public function checkPhone($phone)
     {
         return $this
             ->customer
             ->where('phone', $phone)->first();
     }
-      public function checkNum($request)
-    {
-        return $request->validate([
-         'phone' => 'required|numeric|min:10',
-             
-            ]);
-      
-       
-    }
-   
+
     public function store($request)
     {
 
         $numbers = md5(rand(999, 9999));
         $randomCode = mb_substr($numbers, 0, 5);
 
-        $requestData = ['name' => ucfirst($request->name) , 'email' => $request->email, 'password' => md5($request->password) , 'show_password' => $request->password, 'phone' => $request->phone, 'fcmToken' => $request->fcmToken, 'my_referral_code' => $randomCode, 'is_company' => $request->is_company, 'company_name' => $request->company_name , 'otp' => $request->otp,];
+
+        $company_name = "";
+        if($request->is_company == 0)
+            {
+                 $company_name = ""; 
+            }else
+            {
+              $company_name =  $request->company_name; 
+            }
+
+        $requestData = ['name' => ucfirst($request->name) , 'email' => $request->email, 'password' => md5($request->password) , 'show_password' => $request->password, 'phone' => $request->phone, 'fcmToken' => $request->fcmToken, 'my_referral_code' => $randomCode, 'is_company' => $request->is_company, 'company_name' => $company_name ,'otp' => $request->otp];
         return $this
             ->customer
             ->insert($requestData);
@@ -162,6 +188,12 @@ class CustomerRepository
             $req['house_no'] = $request->house_no;
         }
 
+       
+           if($request->latitude !='') 
+            { $req['latitude'] = $request->latitude ; }    
+         
+          if($request->longitude !='') 
+            { $req['longitude'] = $request->longitude ; }    
         return $this
             ->customer
             ->where('id', $request->customer_id)
@@ -178,13 +210,13 @@ class CustomerRepository
             'show_password' => $password
         ));
     }
-    
-     public function blockCustomer($id)
+
+    public function blockCustomer($id)
     {
         return $this
             ->customer
             ->where('id', $id)->update(array(
-            'status' =>  '3'
+            'status' => '3'
         ));
     }
 

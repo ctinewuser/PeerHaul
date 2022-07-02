@@ -1,3 +1,4 @@
+
 @include('header')
   @include('sidebar')
 
@@ -41,7 +42,7 @@
                                                 <tr><th>S.No.</th>
                                                     <th>Type</th>
                                                  <th>Taken Time</th>   
-                                                 <!--<th>Action</th>-->
+                                                 <th>Action</th>
                                                 </tr>
                                             </thead>    
                                             <tbody>
@@ -55,10 +56,53 @@
                                                     <td> {{$i}}. </td>
                                                      <td>  @if($k->type == 0) {{'Normal'}} @else {{'Express'}} @endif  </td>
                                                     <td> {{$k->taken_time }} </td>
-                                            
-                                                     <!--<td> <a href="" class="btn btn-edit btn-info"  > <i class="fa fa-edit"> </i> </a></td>-->
-                                                </tr>
+                                     
+                                                     <td> <a href="{{url('editDeadline/'.$k->id)}}" class="btn btn-edit btn-info" data-toggle="modal" data-target="#deadlineModal{{$k->id}}" > <i class="fa fa-edit"> </i> </a>
 
+                                                       <a title="delete" href="{{url('removeDeadline/'.encrypt($k->id))}}" class="btn btn-link btn-danger" onclick="return confirm('Do you really want to delete it!');"> <i class="fa fa-times"> </i> </a>
+                                                          
+                                                     </td>
+                                                </tr>
+                                        <!--Add Modal Popup--->
+                                    <!-- The Modal -->
+                                    <div class="modal fade" id="deadlineModal{{$k->id}}" role="dialog">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                              
+                                                   <h4>Edit Your Deadline Time</h4>
+                                                </div>
+
+                                                <div class="modal-body pt-0">
+                                                    <form id="contactForm" name="contact" role="form" method="post" action="{{url('update-deadline/'.$k->id)}}">
+                                                     @csrf
+                                                <div class="form-group mb-0"> 
+
+                                                <label for="type" class="control-label">User Select</label>
+                                                <select name="type" class="form-control" id="type" >
+
+                                       <option {{$k->type}} value="0" @if($k->type == 0) {{'selected'}}@endif> Normal
+                                       </option>
+
+                                         <option {{$k->type}} value="1" @if($k->type == 1) {{'selected'}}@endif  > Express </option>
+                                                </select>
+
+                                          <label for="taken_time">Duration</label>
+
+                                                <input type="text" class="form-control" name="taken_time" id="taken_time" value="{{$k->taken_time}}" >
+
+                                                 </div>
+                                                      
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                                </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- The Modal -->
                                                @endforeach  
                                                 
                                             </tbody>

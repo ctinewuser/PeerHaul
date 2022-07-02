@@ -8,6 +8,8 @@ use App\Models\Vehicle ;
 use App\Models\VehicleType ;
 use App\User ;
 use DB ;
+use File;
+
 use Illuminate\Support\Facades\Storage ;
  
 class VehicleRepository {
@@ -61,7 +63,7 @@ class VehicleRepository {
         }
     }
 
-    public function storeVehicleInfo($request)
+    public function storeVehicleInfold($request)
      {
         //  upload_vehicle_image
         if ($request['upload_vehicle_image']) {
@@ -113,12 +115,157 @@ class VehicleRepository {
 
         return $this->vehicle->insert($requestData);
     }
-    
+    ///////////////////////////////////////
+       public function storeVehicleInfo($request)
+     {
+        //  upload_vehicle_image
+        if ($request['upload_vehicle_image']) {
+                $files = [];
+                if ($request->hasfile('upload_vehicle_image'))
+                {
+                    foreach ($request->file('upload_vehicle_image') as $file)
+                    {
+                        $name = time() . rand(1, 50) . '.' . $file->extension();
+                        $destinationPath = public_path("/uploads/vehicle/");
+                        $file->move($destinationPath, $name);
+                        $files[] = $name;
+                    }
+                }
+
+                $file = new File();
+                $file->upload_vehicle_image = $files;
+                $image_1 = json_encode($files);
+
+
+          } else { $image_1 = '' ; }  
+
+        //  driver_license_front
+        if ($request['driver_license_front']) {
+
+            if ($request->hasFile('driver_license_front'))
+            {
+                $image = $request->file('driver_license_front');
+                $image_2 = time().rand(111111,999999). '.' . $image->getClientOriginalExtension();
+                $destinationPath = public_path('/uploads/vehicle/');
+                $image->move($destinationPath, $image_2);
+            }
+          } else { $image_2 = '' ; }  
+
+          //  driver_license_front
+        if ($request['driver_license_back']) {
+
+            if ($request->hasFile('driver_license_back'))
+            {
+                $image = $request->file('driver_license_back');
+                $image_3 = time().rand(111111,999999).'.' . $image->getClientOriginalExtension();
+                $destinationPath = public_path('/uploads/vehicle/');
+                $image->move($destinationPath, $image_3);
+            }
+          } else { $image_3 = '' ; }
+       
+        $requestData = [
+            'driver_id' => $request->driver_id , 
+            'upload_vehicle_image' => $image_1 ,
+            'vechicle_make' => $request->vechicle_make , 
+            'vechicle_model' => $request->vechicle_model , 
+            'vechicle_license_plate' => $request->vechicle_license_plate ,  
+            'vechicle_color' => $request->vechicle_color , 
+            'vechicle_type' => $request->vechicle_type , 
+            'driver_license_front' => $image_2 , 
+            'driver_license_back' => $image_3          
+        ];
+
+        return $this->vehicle->insert($requestData);
+    }
+    ////////////////////////////////////////
+    public function updateVehicleInfo($request)
+    {
+        $id = $request->driver_id ;
+
+        $image_1 = $image_2 = $image_3 = '' ;
+
+          // upload_vehicle_image
+          if ($request['upload_vehicle_image']) {
+
+             if ($request['upload_vehicle_image']) {
+                $files = [];
+                if ($request->hasfile('upload_vehicle_image'))
+                {
+                    foreach ($request->file('upload_vehicle_image') as $file)
+                    {
+                        $name = time() . rand(1, 50) . '.' . $file->extension();
+                        $destinationPath = public_path("/uploads/vehicle/");
+                        $file->move($destinationPath, $name);
+                        $files[] = $name;
+                    }
+                }
+
+                $file = new File();
+                $file->upload_vehicle_image = $files;
+                    $image_1 = json_encode($files);
+          } 
+        
+                // driver_license_front
+                if ($request['driver_license_front']) {
+        
+                    if ($request->hasFile('driver_license_front'))
+                    {
+                        $image = $request->file('driver_license_front');
+                        $image_2 = time().rand(111111,999999). '.' . $image->getClientOriginalExtension();
+                        $destinationPath = public_path('/uploads/vehicle/');
+                        $image->move($destinationPath, $image_2);
+                    }
+                  } 
+        
+                // driver_license_front
+                if ($request['driver_license_back']) {
+        
+                    if ($request->hasFile('driver_license_back'))
+                    {
+                        $image = $request->file('driver_license_back');
+                        $image_3 = time().rand(111111,999999).'.' . $image->getClientOriginalExtension();
+                        $destinationPath = public_path('/uploads/vehicle/');
+                        $image->move($destinationPath, $image_3);
+                    }
+                  }  
+                
+              if( $image_1 !='' ) 
+                  { $req['upload_vehicle_image'] = $image_1 ; }
+      
+              if( $request->vechicle_make !='' ) 
+                  { $req['vechicle_make'] = $request->vechicle_make ; }
+      
+              if( $request->vechicle_model !='' ) 
+                  { $req['vechicle_model'] = $request->vechicle_model ; }
+      
+              if( $request->vechicle_license_plate !='' ) 
+                  { $req['vechicle_license_plate'] = $request->vechicle_license_plate ; }
+      
+              if( $request->vechicle_color !='' ) 
+                  { $req['vechicle_color'] = $request->vechicle_color ; }    
+      
+              if( $request->vechicle_type !='' ) 
+                  { $req['vechicle_type'] = $request->vechicle_type ; } 
+      
+              if( $image_2 !='' ) 
+                  { $req['driver_license_front'] = $image_2 ; }    
+      
+              if( $image_3 !='' ) 
+                  { $req['driver_license_back'] = $image_3 ; }    
+           
+        return $this->vehicle->where('id',$id)->update($req) ;
+    }
+
+}
+
+
+
+    //////////////////////////////////////////
     public function getVehicleById($id){
         return $this->vehicle->where('driver_id',$id)->first();
     }
-
-    public function updateVehicleInfo($request)
+     
+    public function updateVehicleInfold($request)
     {
         $id = $request->driver_id ;
 

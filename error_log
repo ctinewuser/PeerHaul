@@ -3,3 +3,8 @@
 [30-May-2022 11:28:42 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 400560128 bytes) in /home3/ctinf0eg/public_html/CTIS/peerHaulApp/app/Http/Controllers/CustomerApiController.php on line 51
 [30-May-2022 11:28:53 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 400560128 bytes) in /home3/ctinf0eg/public_html/CTIS/peerHaulApp/app/Http/Controllers/CustomerApiController.php on line 51
 [30-May-2022 11:30:04 UTC] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 266342400 bytes) in /home3/ctinf0eg/public_html/CTIS/peerHaulApp/app/Http/Controllers/CustomerApiController.php on line 51
+[03-Jun-2022 10:55:31 UTC] PHP Fatal error:  Cannot use empty array elements in arrays in /home3/ctinf0eg/public_html/CTIS/peerHaulApp/app/Http/Controllers/CustomerApiController.php on line 253
+[03-Jun-2022 10:55:57 UTC] PHP Fatal error:  Cannot use empty array elements in arrays in /home3/ctinf0eg/public_html/CTIS/peerHaulApp/app/Http/Controllers/CustomerApiController.php on line 253
+[03-Jun-2022 10:56:34 UTC] PHP Fatal error:  Cannot use empty array elements in arrays in /home3/ctinf0eg/public_html/CTIS/peerHaulApp/app/Http/Controllers/CustomerApiController.php on line 255
+[09-Jun-2022 12:21:31 UTC] PHP Fatal error:  Cannot use Carbon as Carbon because the name is already in use in /home3/ctinf0eg/public_html/CTIS/peerHaulApp/app/Http/Controllers/CustomerApiController.php on line 23
+[14-Jun-2022 13:54:06 UTC] PHP Fatal error:  Cannot use empty array elements in arrays in /home3/ctinf0eg/public_html/CTIS/peerHaulApp/app/Repository/ListingRepository.php on line 696

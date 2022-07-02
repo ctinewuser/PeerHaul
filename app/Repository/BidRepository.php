@@ -41,19 +41,20 @@ class BidRepository {
       public function getBidDetails($driver_id)
       {
         
-      // DB::enableQueryLog();
+     // DB::enableQueryLog();
      /////Detail of accept bid  
       return DB::table('tbl_job_bid')
-            ->leftJoin('tbl_job_listing', 'tbl_job_bid.listing_id', '=', 'tbl_job_listing.id')
-            ->leftJoin('tbl_item_information', 'tbl_job_bid.listing_id', '=', 'tbl_item_information.listing_id')
+            ->Join('tbl_job_listing', 'tbl_job_bid.listing_id', '=', 'tbl_job_listing.id')
+            ->Join('tbl_item_information', 'tbl_job_bid.listing_id', '=', 'tbl_item_information.listing_id')
             ->where('tbl_job_bid.driver_id',$driver_id)
-            ->where('tbl_job_listing.job_status','0')
+            ->where('tbl_job_listing.job_status','4')
             ->where('tbl_job_listing.bid_status','1')
-            ->select('tbl_item_information.descriptive_title', 'tbl_item_information.upload_photos', 'tbl_job_listing.pick_up_location' , 'tbl_job_listing.drop_off_location' , 'tbl_job_listing.final_price')
+            ->select('tbl_item_information.descriptive_title', 'tbl_item_information.upload_photos', 'tbl_job_listing.pick_up_location' , 'tbl_job_listing.drop_off_location' , 'tbl_job_listing.final_price','tbl_job_listing.id')
             ->get();
-            // dd(DB::getQueryLog());
+           // dd(DB::getQueryLog());
 
       }
+    
       public function getCompletedBidList($driverId)
       {
          return DB::table('tbl_job_listing')

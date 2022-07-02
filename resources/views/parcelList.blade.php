@@ -39,7 +39,9 @@
                                         <table id="datatables" class="table table-striped table-bordered table-hover" cellspacing="0" width="100%" style="width:100%">
                                             <thead>
                                                 <tr><th>S.No.</th>
-                                                 <th>Size Name</th>   
+                                                 <th>Size Name</th>
+                                                 <th>Parcel Description</th>  
+                                                   <th>Date / Time</th> 
                                                 </tr>
                                             </thead>    
                                             <tbody>
@@ -50,6 +52,9 @@
                                                 <tr>
                                                     <td> {{$i}}. </td>
                                                     <td> {{$list->size_name }} </td>
+                                                     <td> {{$list->size_description }} </td>
+                                                    <td> {{date("d-M-Y", strtotime($list->created_at))}} </td>
+                                                    
                                                 </tr>
 
                                                @endforeach  

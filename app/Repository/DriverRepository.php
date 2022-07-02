@@ -51,7 +51,7 @@ class DriverRepository   {
         $numbers = md5(rand(999, 9999)) ;
         $randomCode = mb_substr($numbers, 0, 5); 
        
-        $requestData = ['name' => ucfirst($request->name), 'email'=>$request->email , 'password'=>md5($request->password) ,'show_password'=>$request->password , 'phone'=>$request->phone , 'fcmToken'=>$request->fcmToken, 'my_referral_code'=>$randomCode];
+        $requestData = ['name' => ucfirst($request->name), 'email'=>$request->email , 'password'=>md5($request->password) ,'show_password'=>$request->password , 'phone'=>$request->phone , 'fcmToken'=>$request->fcmToken, 'my_referral_code'=>$randomCode ,'otp' => $request->otp];
         return $this->userDriver->insert($requestData);
     }
 
@@ -87,11 +87,18 @@ class DriverRepository   {
             { $req['date_of_birth'] = $request->date_of_birth ; }
 
         if($request->address !='') 
-            { $req['address'] = $request->address ; }    
+            { $req['address'] = $request->address ; }   
+             
+         if($request->latitude !='') 
+            { $req['latitude'] = $request->latitude ; }    
+         
+          if($request->longitude !='') 
+            { $req['longitude'] = $request->longitude ; }    
+         
+        // if($request->referred_code) 
+        //     { $req['referred_code'] = $request->referred_code ; }    
+         
 
-        if($request->referred_code !='') 
-            { $req['referred_code'] = $request->referred_code ; }    
-           
         return $this->userDriver->where('id',$id)->update($req) ;
         
     }

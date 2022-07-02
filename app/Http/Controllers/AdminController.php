@@ -11,6 +11,8 @@ use App\Repository\VehicleRepository ;
 use App\Models\UserDriver;
 use App\Models\Admin;
 use App\Models\ParcelSize;
+use App\Models\Fees;
+
 
 use DB;
 use Hash;
@@ -25,8 +27,8 @@ use DateTime;
 class AdminController extends Controller
  {
     
-    public function __construct(DriverRepository $user_driver,Admin $admin , CustomerRepository $user_customer ,  ListingRepository $job_detail ,ListingRepository $getjobotherdetails  
-    ,ListingRepository $vehicle_type ,ListingRepository $review ,ListingRepository $terms , ListingRepository $bidjob , ListingRepository $popup, VehicleRepository $vehicle, ParcelSize $parcel ,ListingRepository $deadline ,ListingRepository $listing)
+    public function __construct(DriverRepository $user_driver,Admin $admin , CustomerRepository $user_customer ,  ListingRepository $job_detail ,ListingRepository $getjobotherdetails  , ListingRepository $fees,
+    ListingRepository $vehicle_type ,ListingRepository $review ,ListingRepository $terms , ListingRepository $bidjob , ListingRepository $popup, VehicleRepository $vehicle, ParcelSize $parcel ,ListingRepository $deadline ,ListingRepository $listing ,ListingRepository $transaction)
     {
        $this->user_driver = $user_driver ;
        $this->admin = $admin ;
@@ -42,6 +44,8 @@ class AdminController extends Controller
         $this->deadline = $deadline;
         $this->bidjob = $bidjob;
          $this->listing = $listing;
+         $this->fees = $fees;
+          $this->transaction = $transaction;
     } 
 
     public function loginPage()
@@ -140,6 +144,16 @@ class AdminController extends Controller
       return view('parcelList',compact('parcelist')) ;
 
     }
+    public function feesStructure()
+    {
+      $fees = $this->fees->getFeesListnew() ;
+      return view('feesList',compact('fees')) ; 
+    }
+    public function transactionList()
+    {
+          $trans = $this->transaction->getTransactionAdmin() ;
+      return view('transaction',compact('trans')) ; 
+    }
     public function getTermsCondition()
     {
      
@@ -153,7 +167,7 @@ class AdminController extends Controller
 
       return view('popup_content',compact('allpopup')) ;
     }
-
+    
     public function updateCustomer(Request $request)
     {
 
@@ -182,6 +196,32 @@ class AdminController extends Controller
     {
         
       $update = $this->popup->updateContent($request) ;
+
+      if($update){   
+        return redirect()->back()
+               ->with('success_msg', 'Data Updated Successfully!');
+        } else {    
+            return redirect()->back()
+               ->with('error_msg', 'Data Not Updated!');
+        }
+    }
+    public function updateDeadline(Request $request)
+    {
+        
+      $update = $this->deadline->updateDeadline($request) ;
+
+      if($update){   
+        return redirect()->back()
+               ->with('success_msg', 'Deadline Time Updated Successfully!');
+        } else {    
+            return redirect()->back()
+               ->with('error_msg', 'Data Not Updated!');
+        }
+    }
+     public function updateFees(Request $request)
+    {
+        
+      $update = $this->fees->updateFees($request) ;
 
       if($update){   
         return redirect()->back()
@@ -241,6 +281,20 @@ class AdminController extends Controller
             
              return redirect()->back()
                 ->with('error_msg', 'User Not Deleted!');
+         }
+    }
+     public function removeDeadline($id){
+      
+      $delete = $this->listing->removeDeadline(decrypt($id)) ;
+ 
+       if($delete){
+         
+         return redirect()->back()
+                ->with('success_msg', 'Deadline Data Deleted Succesfully!');
+         } else {
+            
+             return redirect()->back()
+                ->with('error_msg', 'Data Not Deleted!');
          }
     }
     public function removeCustomer($id){
@@ -468,8 +522,18 @@ class AdminController extends Controller
     
     return view('view-job',compact('getjobDetails')) ;
    }
-
-
+   public function editDeadlineById($id)
+   {
+     $editDeadline = $this->deadline->changeDeadlineById($id);
+    
+    return view('view-job',compact('getjobDetails')) ;
+   }
+    public function editFeesById($id)
+   {
+     $editFees = $this->fees->changeFeesById($id);
+    
+    return view('view-job',compact('editFees')) ;
+   }
    public function getJobDetailById($id)
    {
     //$getjobDetails = $this->job_detail->viewJobDetails($id) ;

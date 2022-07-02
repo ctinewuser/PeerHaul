@@ -62,13 +62,13 @@
                                                     <td> {{$users->name }} </td>
                                                     <td> {{$users->pick_up_location }} </td>
                                                     <td> {{$users->drop_off_location }} </td>
-                                                    <td> {{$users->parcel_size }} </td>
+                                                    <td> {{$users->parcel_name }} </td>
                                                     <td> {{$users->estimate_price }} </td>
                                                     <td> 
                                                           @if($users->express_listing == '0')
-                                                         No
+                                                         Normal
                                                           @else
-                                                          Yes
+                                                          Express
                                                           @endif
                                                         
                                                     </td>

@@ -35,6 +35,8 @@ Route::get('/dashboard', 'AdminController@dashboard');
 //=== User's Related
 Route::get('/driver-list', 'AdminController@getAllUsers');
 Route::get('/removeUser/{id}', 'AdminController@removeUser');
+Route::get('/removeDeadline/{id}', 'AdminController@removeDeadline');
+
 Route::get('/removeCustomer/{id}', 'AdminController@removeCustomer');
 Route::post('/changeUserSt', 'AdminController@changeUserSt');
 
@@ -46,6 +48,10 @@ Route::get('/viewUser/{id}', 'AdminController@getUserById');
 Route::get('/viewCustomer/{id}', 'AdminController@getCustomerById');
 Route::get('/viewJob/{id}', 'AdminController@getJobDetailById');
 Route::get('/editContent/{id}', 'AdminController@editContentById');
+Route::get('/editDeadline/{id}', 'AdminController@editDeadlineById');
+Route::get('/editFees/{id}', 'AdminController@editFeesById');
+Route::post('/update-deadline/{id}', 'AdminController@updateDeadline');
+Route::post('/update-fees/{id}', 'AdminController@updateFees');
 Route::get('/review', 'AdminController@getReviewList');
 Route::get('/vehicle-info', 'AdminController@getVehicleinfo');
 Route::get('/terms-condition', 'AdminController@getTermsCondition');
@@ -54,6 +60,9 @@ Route::post('/update-content/{id}', 'AdminController@updateContent');
 Route::post('/update-terms-condition', 'AdminController@updateTerms');
 Route::post('/update-customer/{id}', 'AdminController@updateCustomer');
 Route::get('/parcel-list', 'AdminController@parcelList');
+Route::get('/fees-list', 'AdminController@feesStructure');
+Route::get('/transaction-list', 'AdminController@transactionList');
+
 Route::post('/image-upload' , 'AdminController@imageUpload') ;
 Route::get('/deadline-List' , 'AdminController@deadlineList') ;
 Route::get('/jobBid-List/{id}' , 'AdminController@getjobBidList') ;

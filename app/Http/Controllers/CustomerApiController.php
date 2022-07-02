@@ -1,7 +1,6 @@
 <?php
 namespace App\Http\Controllers;
 
-
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
@@ -10,7 +9,6 @@ use App\Repository\CustomerRepository;
 use App\Repository\ListingRepository;
 use App\Repository\DriverRepository;
 use App\Repository\BidRepository;
-
 
 use DB;
 use Hash;
@@ -22,7 +20,7 @@ use Lang;
 use Session;
 use DateTime;
 use URL;
-
+use DateInterval;
 
 class CustomerApiController extends Controller
 {
@@ -38,24 +36,32 @@ class CustomerApiController extends Controller
         $this->bid = $bid;
     }
 
-   public function send_otp(Request $request)
-     {
-          $phone = $request["phone"]; 
-        
-                if (!empty($phone))
+    public function send_otp(Request $request)
+    {
+         $phone = $request["phone"];
+         $checkPhone = $this
+                ->customer
+                ->checkPhone($phone);
+
+      if($checkPhone)
+        {   
+            return response()->json(["success" => 500, "message" => "Phone number already registered", ]); 
+            // exit ;
+         } else {
+
+            if (!empty($phone))
             {
-                  $otp_number = mt_rand(1111,9999);
-                 return response()
-                     ->json(["success" => 200, "message" => "Otp send successfully", "otp" => $otp_number]);
+                $otp_number = mt_rand(1111, 9999);
+                return response()->json(["success" => 200, "message" => "Otp send successfully", "otp" => $otp_number]);
             }
-              else
-                {
+            else
+            {
                 DB::rollback();
                 return response()->json(["success" => 500, "message" => "Invalid Phone Number", ]);
-                }
-
             }
-    
+        }
+    }
+
     public function signUp(Request $request)
     {
         $post = $request->all();
@@ -79,13 +85,12 @@ class CustomerApiController extends Controller
 
             if ($checkPhone)
             {
-                return response()->json(["success" => 500, "message" => "Phone Number Already Registered ", ]);
+            return response()->json(["success" => 500, "message" => "Phone Number Already Registered ", ]);
             }
 
             $userCreate = $this
                 ->customer
                 ->store($request);
-
 
             if (!empty($userCreate))
             {
@@ -94,7 +99,7 @@ class CustomerApiController extends Controller
                 $userDetails = $this
                     ->customer
                     ->checkEmail($email);
-             
+
                 $getDetails["id"] = $userDetails->id;
                 $getDetails["name"] = $userDetails->name;
                 $getDetails["email"] = $userDetails->email;
@@ -103,9 +108,6 @@ class CustomerApiController extends Controller
                 $getDetails["fcmToken"] = $userDetails->fcmToken;
                 $getDetails["my_referral_code"] = $userDetails->my_referral_code;
                 $getDetails["otp"] = $userDetails->otp;
-
-               
-
 
                 return response()
                     ->json(["success" => 200, "message" => "Customer Profile Created Successfully.", "user_details" => $getDetails]);
@@ -123,7 +125,7 @@ class CustomerApiController extends Controller
                 ->json(["success" => 500, "message" => "All Parameters Required", ]);
         }
     }
- 
+
     public function customer_login(Request $request)
     {
         try
@@ -155,6 +157,19 @@ class CustomerApiController extends Controller
                     $getDetails["username"] = $userDetails->name;
                     $getDetails["email"] = $userDetails->email;
                     $getDetails["phone"] = $userDetails->phone;
+                    $getDetails["otp"] = $userDetails->otp;
+                    $getDetails["date_of_birth"] = $userDetails->date_of_birth;
+                    $getDetails["house_no"] = $userDetails->house_no;
+                    $getDetails["address"] = $userDetails->address;
+                    $getDetails["state"] = $userDetails->state;
+                    $getDetails["city"] = $userDetails->city;
+                    $getDetails["post_code"] = $userDetails->post_code;
+                    $getDetails["total_review"] = $userDetails->total_review;
+                    $getDetails["is_company"] = $userDetails->is_company;
+                    $getDetails["company_name"] = $userDetails->company_name;
+             $getDetails["my_referral_code"] = $userDetails->my_referral_code;
+                  $getDetails["referred_code"] = $userDetails->referred_code;
+                  $getDetails["device_type"] = $userDetails->device_type;
                     if ($userDetails->profile_img != " ")
                     {
                         $getDetails["profile_img"] = URL::to("/") . "/public/uploads/profile_image/" . $userDetails->profile_img;
@@ -164,7 +179,20 @@ class CustomerApiController extends Controller
                         $getDetails["profile_img"] = URL::to("/") . "/public/uploads/profile_image/default.png";
                     }
                     $getDetails["fcmToken"] = $userDetails->fcmToken;
+                    
+                   ////CHECK IF PERSONAL DETAIL IS FILLED OR NOT
 
+                    if($userDetails->date_of_birth != '')
+                    {
+                      $is_personal_info = 1;
+                    }
+                    else
+                    {
+                     $is_personal_info = 0;
+                     }
+
+                    $getDetails["is_personal_info"] = $is_personal_info;
+                   
                     return response()
                         ->json(["success" => 200, "message" => "Login successfully.", "user_details" => $getDetails, ]);
                 }
@@ -191,8 +219,75 @@ class CustomerApiController extends Controller
      * Update profile
      * @param object
      */
+  public function updateProfile(Request $request)
+    {
+       $customerId = $request["customer_id"];
+         
+        if($customerId != "")
+         {
+           // Check Customer Id
+           $checkCustomerId = $this->customer->getCustomerById($customerId) ;
 
-    public function updateProfile(Request $request)
+           if(!$checkCustomerId)
+           {
+            return json_encode(["success" => 500, "message" => "Customer Id does not exist" ]); 
+           }
+
+            try
+            {
+            // //////////////////
+         $checkPhone = $this
+                ->customer
+                ->checkPhoneUpdate($request->phone,$request["customer_id"]);
+
+        if($checkPhone)
+        {   
+            return response()->json(["success" => 500, "message" => "Phone number already registered", ]);   
+        }
+
+        /*if ($request["phone"])
+              {
+                $req['phone'] = $request->phone;
+             }
+        else
+            {
+                $otp_number = mt_rand(1111, 9999);
+               response()->json(["success" => 200, "message" => "Otp send successfully", "otp" => $otp_number]);
+             }
+*/
+         $checkEmail = $this->customer->checkEmailUpdate($request->email,$request["customer_id"]);
+  
+               if ($checkEmail)
+                 {
+                return json_encode(["success" => 500, "message" => "Email Id already exist" ]);
+                 } 
+                  else 
+                 { 
+                  
+                    $update = $this
+                        ->customer
+                        ->updateCustomerProfile($request);
+                    
+                    if ($update)
+                    {
+                        return json_encode(["success" => 200, "message" => "Successfully Updated",  'user_details'=>$checkCustomerId]);
+                    }
+
+                    return json_encode(["success" => 500, "message" => "Not Updated", ]);
+                 }
+               
+            }
+            catch(\Exception $e)
+            {
+                return json_encode(["success" => 500, "message" => "All Parameter Required", ]);
+            }
+        }
+        else
+        {
+            return json_encode(["success" => 500, "message" => "Customer ID is Required", ]);
+        }
+    }
+    public function updateProfile1(Request $request)
     {
         $customerId = $request["customer_id"];
 
@@ -203,10 +298,16 @@ class CustomerApiController extends Controller
                 $update = $this
                     ->customer
                     ->updateCustomerProfile($request);
+                
+                $userdetails = $this
+                    ->customer
+                    ->getCustomerById($request["customer_id"]);
+               // print_r($userdetails);
+               // die;
 
                 if ($update)
                 {
-                    return json_encode(["success" => 200, "message" => "Successfully Updated", ]);
+                    return json_encode(["success" => 200, "message" => "Successfully Updated", 'user_details'=>$userdetails]);
                 }
 
                 return json_encode(["success" => 500, "message" => "Not Updated", ]);
@@ -238,17 +339,29 @@ class CustomerApiController extends Controller
                 $getDetails["username"] = $userDetails->name;
                 $getDetails["email"] = $userDetails->email;
                 $getDetails["phone"] = $userDetails->phone;
+                $getDetails["otp"] = $userDetails->otp;
                 $getDetails["date_of_birth"] = $userDetails->date_of_birth;
+                 $getDetails["house_no"] = $userDetails->house_no;
+                $getDetails["address"] = $userDetails->address;
+                $getDetails["state"] = $userDetails->state;
+                $getDetails["city"] = $userDetails->city;
+                $getDetails["post_code"] = $userDetails->post_code;
+                $getDetails["total_review"] = $userDetails->total_review;
+                $getDetails["is_company"] = $userDetails->is_company;
+                $getDetails["company_name"] = $userDetails->company_name;
+             $getDetails["my_referral_code"] = $userDetails->my_referral_code;
+                  $getDetails["referred_code"] = $userDetails->referred_code;
+                  $getDetails["device_type"] = $userDetails->device_type;
                 if ($userDetails->profile_img != "")
                 {
-                    $getDetails["profile_img"] = $userDetails->profile_img;
+                    $getDetails["profile_img"] = URL::to("/") . "/public/uploads/profile_image/" . $userDetails->profile_img;
                 }
                 else
                 {
                     $getDetails["profile_img"] = "";
                 }
 
-                return response()->json(["success" => 200, "message" => "Success", "user_details" => $getDetails, ]);
+             return response()->json(["success" => 200, "message" => "Success", "user_details" => $getDetails, ]);
             }
             else
             {
@@ -260,9 +373,6 @@ class CustomerApiController extends Controller
             return json_encode(["success" => 500, "message" => "All Parameter Required", ]);
         }
     }
-
-
-
 
     public function oldforgotPassword()
     {
@@ -287,12 +397,12 @@ class CustomerApiController extends Controller
             ->getCustomerByEmail($email);
 
         if ($checkCustomer)
-        { 
-            
-            $checkId =  $checkCustomer->id;
-            $encrypt =  encrypt($checkId);
+        {
+
+            $checkId = $checkCustomer->id;
+            $encrypt = encrypt($checkId);
             $name = '';
-            $url = 'https://ctinfotech.com/peerhaul/#/reset-password/'.$encrypt;
+            $url = 'https://ctinfotech.com/peerhaul/#/reset-password/' . $encrypt;
 
             $data = array(
                 'name' => $checkCustomer->name,
@@ -305,7 +415,7 @@ class CustomerApiController extends Controller
                     ->subject("Reset Password");
 
             });
-            return json_encode(["success" => 200, "message" => "Link sent to your email",]);
+            return json_encode(["success" => 200, "message" => "Link sent to your email", ]);
         }
         else
         {
@@ -315,12 +425,10 @@ class CustomerApiController extends Controller
 
     }
 
-  
-   
     public function change_password(Request $request)
     {
         $decrypt = $request["customer_id"];
-          $customerId = decrypt($decrypt);
+        $customerId = decrypt($decrypt);
 
         $password = $request["password"];
         if ($customerId != "" && $password != "")
@@ -355,8 +463,6 @@ class CustomerApiController extends Controller
             return json_encode(["success" => 500, "message" => "All Parameter Required : customer_id, password", ]);
         }
     }
- 
-
 
     public function updateProfileImage(Request $request)
     {
@@ -378,6 +484,7 @@ class CustomerApiController extends Controller
                         $image->move($destinationPath, $img);
                     }
                     $userr->profile_img = $img;
+                    $pro_imgage = URL::to("/") . "/public/uploads/profile_image/".$img;
                 }
 
                 $userr->save();
@@ -387,7 +494,7 @@ class CustomerApiController extends Controller
                     return json_encode(["success" => 500, "message" => "Not Updated", ]);
                 }
 
-                return json_encode(["success" => 200, "message" => "Successfully Updated", "image" => $img, ]);
+                return json_encode(["success" => 200, "message" => "Successfully Updated", "image" => $pro_imgage, ]);
             }
             catch(\Exception $e)
             {
@@ -401,36 +508,21 @@ class CustomerApiController extends Controller
     }
 
     ///////Multiple upload image
+  
     public function storeMultipleImages(Request $request)
     {
-
         if (!empty($_POST))
         {
             try
-            {
+            {  
                 $userr = $this
                     ->customer
                     ->getCustomerById($request["customer_id"]);
 
-                //============= ADD multiple
-                /* if ($request->hasFile('profile_image'))
-                {
-                $files = $request->file('profile_image');
-                $newImage ='' ;
-                
-                foreach($files as $file){
-                $filename = $file->getClientOriginalName();
-                $extension = $file->getClientOriginalExtension();
-                $img =   time() .".".$extension;
-                $destinationPath = public_path(
-                            "/uploads/img/"
-                        );
-                $file->move($destinationPath, $img);
-                $newImage = $newImage.$img;
-                }
-                $userr->profile_img = $newImage;
-                } */
-                ///Note:- Function does not save same image
+                    /*$check_img =  $this
+                    ->customer
+                    ->getImageNameByCustomerId($request["customer_id"]);*/
+
                 $files = [];
                 if ($request->hasfile('filenames'))
                 {
@@ -445,14 +537,21 @@ class CustomerApiController extends Controller
 
                 $file = new File();
                 $file->filenames = $files;
-
+                ////to get url 
+                    foreach ($files as $key => $getimg)
+                    {
+                        $a = trim($getimg, '[');
+                        $b = trim($a, ']');
+                        $getDetails1[] = URL::to('/') . "/public/uploads/img/" . trim($b, '"');
+                    }
                 if (!$userr)
                 {
                     return json_encode(["success" => 500, "message" => "Not Updated", ]);
                 }
 
-                return json_encode(["success" => 200, "message" => "Successfully Uploaded", "image" => $files, ]);
+                return json_encode(["success" => 200, "message" => "Successfully Uploaded", "image" => $files, "image_url" => $getDetails1 ]);
             }
+
             catch(\Exception $e)
             {
                 return json_encode(["success" => 500, "message" => "All Parameter Required", ]);
@@ -463,7 +562,6 @@ class CustomerApiController extends Controller
             return json_encode(["success" => 500, "message" => "All Parameter Required", ]);
         }
     }
-
     ///////EnD
     // Terms and Condition-  Api Created by Naincy 17/12/21
     public function termsCondition()
@@ -573,7 +671,7 @@ class CustomerApiController extends Controller
         }
 
     }
-   
+
     //////Insert Review Detail
     public function storeReview(Request $request)
     {
@@ -625,36 +723,89 @@ class CustomerApiController extends Controller
         $customerId = $request["customer_id"];
         $search_jobs = $request["search_jobs"];
         $list_type = $request["list_type"]; // 0 = Listing , 1 = Bids
-        if ($customerId != "")
-        { 
-            $getDetails=array();
+        if ($customerId != NULL && $list_type != NULL)
+        {
+            $getDetails = array();
             $list = $this
                 ->listing
                 ->getmyListingCustomerId($customerId, $list_type, $search_jobs);
-
-           //////get url for images 
-              foreach ($list as $key => $value) { 
-                $getDetails1=array();
-               if ($value->upload_photos != ' ')
-                {
-                    $img = explode(',', $value->upload_photos);
-                    foreach ($img as $key => $getimg) { 
-                     $a = trim($getimg,'[');
-                     $b = trim($a,']');
-                    $getDetails1[] =   URL::to('/') . "/public/uploads/img/" .trim($b,'"') ; 
-                    }   
+             // print_r($list);
+             // die;
+            //////get url for images
+            foreach ($list as $key => $value)
+            {
+                $getDetails1 = array();
+                if ($value->upload_photos == "[]" )
+                { 
+                   $getoneimg
+                    = "";
                 }
-            $getDetails[] = [
-                           'descriptive_title' => $value->descriptive_title ,
-                            'pick_up_location' => $value->pick_up_location ,
-                            'drop_off_location' => $value->drop_off_location ,
-                            'estimate_price' => $value->estimate_price ,
-                            'express_listing' => $value->express_listing ,
-                            'job_status' => $value->job_status ,
-                            'upload_photos' => $getDetails1
-                        ];
+                else
+                {
+                        $img = explode(',', $value->upload_photos);
+                    foreach ($img as $key => $getimg)
+                    {
+                        $a = trim($getimg, '[');
+                        $b = trim($a, ']');
+                        $getDetails1[0] = URL::to('/') . "/public/uploads/img/" . trim($b, '"');
+                       $getoneimg =  implode(" ",$getDetails1);
+                    } 
+
+                }
+                $getDetails[] = ['job_id'=>$value->job_id,'descriptive_title' => $value->descriptive_title, 'pick_up_location' => $value->pick_up_location , 'bid_status' => $value->bid_status,'bid_count' => $value->bid_count, 'drop_off_location' => $value->drop_off_location,'add_bonus'=> $value->add_bonus, 'estimate_price' => $value->estimate_price, 'express_listing' => $value->express_listing, 'job_status' => $value->job_status,'upload_photos' => $getoneimg];
             }
             return response()->json(["success" => 200, "message" => "Success", "job_list" => $getDetails, ]);
+        }
+        else
+        {
+            return json_encode(["success" => 500, "message" => "Customer ID and List Type is Required ", ]);
+        }
+    }
+
+    public function myDeliveries(Request $request)
+    {
+        $customerId = $request["customer_id"];
+        $search_jobs = $request["search_jobs"];
+        $list_type = $request["list_type"]; // 0 = Active , 4 = Completed , 5 = Cancelled
+              $getDetails = array(); 
+        if ($customerId != "")
+        {
+            $list = $this
+                ->listing
+                ->getmyDeliveriesCustomerId($customerId, $list_type, $search_jobs);
+     
+           if(!empty($list))
+           {
+               
+          
+        //////get url for images
+            foreach ($list as $key => $value)
+            {
+           
+                if ($value->upload_photos == "[]" )
+                { 
+                   $getoneimg
+                    = "";
+                }
+                else
+                {
+                        $img = explode(',', $value->upload_photos);
+                    foreach ($img as $key => $getimg)
+                    {
+                        $a = trim($getimg, '[');
+                        $b = trim($a, ']');
+                        $getDetails1[0] = URL::to('/') . "/public/uploads/img/" . trim($b, '"');
+                       $getoneimg =  implode(" ",$getDetails1);
+                    } 
+
+                }
+               $getDetails[] = ['job_id'=>$value->job_id,'descriptive_title' => $value->descriptive_title, 'pick_up_location' => $value->pick_up_location , 'drop_off_location' => $value->drop_off_location,'estimate_price'=> $value->estimate_price, 'express_listing' => $value->express_listing,'bid_status' => $value->bid_status,'upload_photos' => $getoneimg ];
+               /* $getDetails[] = ['job_id'=>$value->job_id,'descriptive_title' => $value->descriptive_title, 'pick_up_location' => $value->pick_up_location , 'drop_off_location' => $value->drop_off_location,'estimate_price'=> $value->estimate_price, 'express_listing' => $value->express_listing, 'job_status' => $value->job_status,'bid_status' => $value->bid_status,'upload_photos' => $getoneimg ];*/
+            }
+             
+           }
+
+            return response()->json(["success" => 200, "message" => "Success", "job_list" => $getDetails]);
         }
         else
         {
@@ -662,7 +813,9 @@ class CustomerApiController extends Controller
         }
     }
 
-    public function myDeliveries(Request $request)
+    //////////////My deliveries for web 
+
+    public function myDeliveriesweb(Request $request)
     {
         $customerId = $request["customer_id"];
         $search_jobs = $request["search_jobs"];
@@ -679,36 +832,195 @@ class CustomerApiController extends Controller
             return json_encode(["success" => 500, "message" => "Customer ID is Required", ]);
         }
     }
-   //////get job details by job id
-   public function getJobDetailByJobId(Request $request)
-   {
-      $jobId = $request["job_id"];
-      if($jobId != '')
-      { 
-             $detail = $this
-                ->listing
-                ->getJobDetailById($jobId);  
-        if(!empty($detail))
+    //////get job details by job id
+    public function getJobDetailByJobId(Request $request)
+    {
+        $jobId = $request["job_id"];
+        if ($jobId != '')
         {
-           $detail = $this
+            $detail = $this
                 ->listing
-                ->viewJobListDetails($jobId); 
-        return response()->json(["success" => 200, "message" => "Success", "job_list" => $detail, ]);
-         }
-          else
-           {
-             return json_encode(array(
+                ->getJobDetailById($jobId);
+            if (!empty($detail))
+            {
+                $detail = $this
+                    ->listing
+                    ->viewJobListDetails($jobId);
+
+                    foreach ($detail as $key => $value)
+            {
+               
+                $getDetails1 = array();
+                if ($value->upload_photos != ' ')
+                {
+                    $img = explode(',', $value->upload_photos);
+                    foreach ($img as $key => $getimg)
+                    {
+                        $a = trim($getimg, '[');
+                        $b = trim($a, ']');
+                        $getDetails1[] = URL::to('/') . "/public/uploads/img/" . trim($b, '"');
+                    }
+                }
+
+                $getDetails = ['id'=>$value->id,'listing_id'=>$value->listing_id,'descriptive_title'=>$value->descriptive_title,'quantity_items' => $value->quantity_items, 'order_ref_number' => $value->order_ref_number, 'delivery_time' => $value->delivery_time, 'express_listing' => $value->express_listing, 'public_item_description' => $value->public_item_description, 'pick_up_location' => $value->pick_up_location,
+                'drop_off_location'=>$value->drop_off_location,'express_delivery_rate'=>$value->express_delivery_rate,'parcel_size'=>$value->parcel_size,'available_person_name'=>$value->available_person_name,'available_person_contact'=>$value->available_person_contact,'available_person_email'=>$value->available_person_email,'pickup_contact_is_me'=>$value->pickup_contact_is_me,'pickup_anytime'=>$value->pickup_anytime,'private_information'=>$value->private_information,'to_time'=>$value->to_time,'from_time'=>$value->from_time,'from_date'=>$value->from_date,'to_date'=>$value->to_date,'driver_qualification'=>$value->driver_qualification,'receiving_contact_is_me'=>$value->receiving_contact_is_me,'receiver_name'=>$value->receiver_name,'receiver_contact'=>$value->receiver_contact,'receiver_email'=>$value->receiver_email,'deadline_id'=>$value->deadline_id,'delivery_date'=>$value->delivery_date,'drop_off_details'=>$value->drop_off_details,'is_template'=>$value->is_template,'template_name'=>$value->template_name
+                ,'upload_photos' => $getDetails1 ];
+            }
+             return response()->json(["success" => 200, "message" => "Success", "job_list" => $getDetails ]);
+            }
+            else
+            {
+                return json_encode(array(
                     'success' => 500,
-                    'message' => 'Data not Found'));
+                    'message' => 'Data not Found'
+                ));
+            }
+        }
+        else
+        {
+            return json_encode(["success" => 500, "message" => " ID is Required", ]);
+        }
+    }
+  
+      ///=========================
+       /* $datetime1 = new DateTime();
+        $datetime2 = new DateTime($value['created_at']);
+        $interval = $datetime1->diff($datetime2);
+        $elapsed = $interval->format('%y years %m months %a days %h hours %i minutes %s seconds');
+        $vardate = date('Y-m-d',strtotime($value['created_at']));
+        $getDAte = '' ;
+        if($vardate === date('Y-m-d')){
+        $getDAte = $interval->format(' %h hours ago');
+        }else{
+          $getDAte = $interval->format(' %a days ');
+        }*/
+        //===========================
+
+     public function time_check(Request $request)
+     {
+            $job_id = $request["job_id"];
+            $check_express = $this
+            ->listing
+            ->getExpressInfo($job_id);
+       
+        if($check_express->express_listing == 1)
+          {
+        $time = $check_express->job_post_time;
+
+       // $time = date("m/d/Y h:i:s A T",$unixtime);
+
+        $real_time = date("H:i:s", strtotime($time));
+        $check_time   =  date("H:i:s", strtotime($real_time) + 60*60);
+        return response()->json(["success" => 200, "message" => " successfully", 'time'=>$real_time ,'gettime'=> $check_time]);
          }
-      }
-      else
-      {
-             return json_encode(["success" => 500, "message" => " ID is Required", ]);
-      }
-   }
+        else
+          {
+        DB::rollback();
+        return response()
+        ->json(["success" => 500, "message" => "Job id is not express", ]); 
+         }
+     }
+
+      public function addTime(Request $request)
+    {
+      
+        $currentDateTime = Carbon::now();
+        
+        $toDateTime = date("H:i A", strtotime($currentDateTime));
+        $newDateTime = Carbon::now()->addHours(23);
+        $tooDateTime = date("H:i A", strtotime($newDateTime));  
+         
+        print_r($toDateTime);
+        echo "<br>";
+        print_r($tooDateTime);
+    }
+    ///////////
+    public function deleteListingByCustomerId(Request $request)
+    {
+
+          $customer_id = $request["customer_id"];
+
+           $check_customer = $this
+                ->listing
+                ->checkCustomerInJobList($customer_id);
+            if(isset($check_customer))
+            {
+                if($customer_id != $check_customer->customer_id )
+                {
+                   return response()->json(["success" => 500, "message" => "Please check Customer Id", ]);  
+                }
+                else
+                {
+                       $cal_time = $this ->listing
+                                      ->getJobDetailByCustomerId($customer_id);
+               
+                    $data = $cal_time->job_post_time;
+                    $toDateTime = date("Y-m-d H:i:s", $data);
+                    $date = new DateTime($toDateTime);
+                    $date1 = $date->add(new DateInterval('P1D'));
+                    $date2=  $date1->format('Y-m-d H:i:s');
+
+            print_r($toDateTime);
+            print_r($date2);
+                die;
+          
+
+                }
+        
+            }
+            else
+            {
+                DB::rollback();
+                return response()
+                    ->json(["success" => 500, "message" => "Customer Id not found", ]);
+            }
+           
+             $delData = $this
+                ->listing
+                ->removeJobListByCustomerId($request);
+
+              if ($delData)
+            {
+                return response()->json(["success" => 200, "message" => "Successfully Job List Deleted", ]);
+            }
+            else
+            {
+                DB::rollback();
+                return response()
+                    ->json(["success" => 500, "message" => "Data not found", ]);
+            }
 
 
+           /* $cal_time = $this
+                ->listing
+                ->getJobDetailByCustomerId($customer_id);
+
+            $data = $cal_time->job_post_time;
+            $toDateTime = date("Y-m-d H:i:s", $data);
+            $date = new DateTime($toDateTime);
+            $date1 = $date->add(new DateInterval('P1D'));
+            $date2=  $date1->format('Y-m-d H:i:s');
+
+        print_r($toDateTime);
+          print_r($date2);
+          die;
+
+           $delData = $this
+                ->listing
+                ->removeJobList($request);
+
+              if ($delData)
+            {
+                return response()->json(["success" => 200, "message" => "Successfully Job List Deleted", ]);
+            }
+            else
+            {
+                DB::rollback();
+                return response()
+                    ->json(["success" => 500, "message" => "Data not found", ]);
+            }
+           */
+           }
     ////End
     public function uploadVehicleInfo(Request $request)
     {
@@ -752,4 +1064,3 @@ class CustomerApiController extends Controller
         }
     }
 }
-

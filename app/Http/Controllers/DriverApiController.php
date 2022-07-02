@@ -29,7 +29,48 @@ class DriverApiController extends Controller
         $this->bid = $bid;
         $this->listing = $listing;
     }
+   
+     public function getUrlContent($url){
 
+         $ch = curl_init();
+         curl_setopt($ch, CURLOPT_URL, $url);
+
+          curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+          curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+          curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+          $data = curl_exec($ch);
+          curl_getinfo($ch, CURLINFO_HTTP_CODE);
+          curl_close($ch);
+          // return ($httpcode>=200 && $httpcode<300) ? $data : false;
+          return $data ;
+      }
+   
+
+    public function send_otp(Request $request)
+    {
+         $phone = $request["phone"];
+         $checkPhone = $this
+                ->user_driver
+                ->checkPhone($phone);
+
+      if($checkPhone)
+        {   
+            return response()->json(["success" => 500, "message" => "Phone number already registered", ]); 
+            // exit ;
+         } else {
+
+            if (!empty($phone))
+            {
+                $otp_number = mt_rand(1111, 9999);
+                return response()->json(["success" => 200, "message" => "Otp send successfully", "otp" => $otp_number]);
+            }
+            else
+            {
+                DB::rollback();
+                return response()->json(["success" => 500, "message" => "Invalid Phone Number", ]);
+            }
+        }
+    }
     public function signUp(Request $request)
     {
 
@@ -81,7 +122,7 @@ class DriverApiController extends Controller
                 $getDetails['my_referral_code'] = $userDetails->my_referral_code;
 
                 return response()
-                    ->json(['success' => 200, 'message' => 'Profile Created Successfully.', 'user Details' => $getDetails]);
+                    ->json(['success' => 200, 'message' => 'Profile Created Successfully.', 'user_details' => $getDetails]);
 
             }
             else
@@ -385,33 +426,128 @@ class DriverApiController extends Controller
         }
     }
    ///////////////////////////////////
+    public function getDistanceBetweenPoints($lat1, $lon1, $lat2, $lon2) 
+    {
+    $theta = $lon1 - $lon2;
+    $miles = (sin(deg2rad($lat1)) * sin(deg2rad($lat2))) + (cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta)));
+    $miles = acos($miles);
+    $miles = rad2deg($miles);
+    $miles = $miles * 60 * 1.1515;
+    $feet = $miles * 5280;
+    $yards = $feet / 3;
+    $kilometers = $miles * 1.609344;
+    $meters = $kilometers * 1000;
+    return compact('miles','feet','yards','kilometers','meters'); 
+   /*
+    $point1 = array('lat' => 7.452452554, 'long' => 3.4554544545);
+    $point2 = array('lat' => 22.636383, 'long' => 75.810692);
+
+    $distance = getDistanceBetweenPoints($point1['lat'], $point1['long'], $point2['lat'], $point2['long']);
+    foreach ($distance as $unit => $value) {
+          echo "test".$unit.': '.number_format($value,2).'<br />';
+     }*/
+     }
+
 
     public function getExpressJobList(Request $request)
     {
          $jobId = $request['job_id'];
          $driverId = $request['driverId'];
-        
           if ($jobId != '' && $driverId != '')
         {
-              $detail = $this
-                ->listing
-                ->getJobDetailById($jobId); 
+            $detail = $this->listing->getJobDetailById($jobId); 
+            $lat1 =   $detail->pick_up_latitude;
+            $lon1 =  $detail->pick_up_longitute;
+            $lat2 =  $detail->drop_off_latitude;
+            $lon2 =   $detail->drop_off_longitute;
+
+                
+            // get distance and time
+
+             $origin = $lat1.",".$lon1 ;
+             $destination = $lat2.",".$lon2 ;
+             $url = "https://maps.googleapis.com/maps/api/directions/json?origin=".$origin."&destination=".$destination."&key=AIzaSyAQ2gCU2hX9OIOeuZJ6lnpp1Xok_ld7DaI" ;
+             $content = SELF::getUrlContent($url) ;
+             $json = (Array)json_decode($content, true) ; 
+             //$distance = $json["routes"][0]["legs"][0]["distance"]["text"] ;
+             $duration = $json["routes"][0]["legs"][0]["duration"]["text"] ;
+           
+            // $getMin = explode(' ',$duration) ;  
+            // print_r($getMin);
+            // die;
+          /* $minutes_to_add = $getMin[0] + $detail->pick_up_latitude ;
+            $time = new DateTime($checkRequest->date_time);
+            $time->add(new DateInterval('PT' . $minutes_to_add . 'M'));
+            $get_end_time = $time->format('Y-m-d H:i:s');
+            */
+            ////////////////////////////////////////////////////
+            $distance =  $this->getDistanceBetweenPoints($lat1, $lon1, $lat2, $lon2);
+            $distance1= number_format($distance['kilometers'],2);
+
+             //////////Dropoff location to driver location (dropoff_distance) 
+            $getdriverdetail = $this->user_driver->getDriverById($request['driverId']);
+
+            $driverLat1 =  $getdriverdetail->latitude;
+            $driverLong1= $getdriverdetail->longitude;
+            $driverDistance =  $this->getDistanceBetweenPoints($lat2, $lon2, $driverLat1, $driverLong1);
+            $driverDistance1= number_format($driverDistance['kilometers'],2);
+
+             //////////Driver location to Pickup Location (distance_from_me)
+          
+            $distanceFromMe =  $this->getDistanceBetweenPoints($driverLat1, $driverLong1 ,$lat1 , $lon1);
+            $distanceFromMe1= number_format($distanceFromMe['kilometers'],2);
+            
             if($detail->express_listing)
             {
               $getList = $this
                 ->listing
                 ->getExpressListByJobId($jobId);
+
+                $getDetails1 =array();
+                if ($getList[0]->photos == "[]" )
+                { 
+                   $getoneimg = "";
                 }
+                else
+                {
+                    $img = json_decode($getList[0]->photos);
+                    foreach ($img as $getimg)
+                    {
+                        $getDetails1[] = URL::to('/') . "/public/uploads/img/" .$getimg;
+                       
+                         $getList[0]->photos = $getDetails1;
+                    } 
+                }
+                  
+                  $delivery_date = $getList[0]->delivery_date;
+                 $taken_time = $getList[0]->taken_time;
+                 $delivery_deadline = date('Y-m-d', strtotime($delivery_date. ' + '.$taken_time)); 
+
+                 $getList[0]->dropoff_distance = round($driverDistance1);
+                 $getList[0]->delivery_deadline = $delivery_deadline;
+                 $getList[0]->driving_time = $duration;
+                 $getList[0]->distance_from_me= round($distanceFromMe1);
+
+                
+                  if(!empty($distance1))
+                  {
+                     $getList[0]->distance= round($distance1);
+
+                  }else{
+                       $getList[0]->distance = "";
+                  }
+          }  
            else
             {
               return json_encode(array(
                     'success' => 500,
                     'message' => 'Data not Found'));
                 }
+         
          return json_encode(array(
                     'success' => 200,
                     'message' => 'Successfully',
-                    'list' => $getList));
+                    'list' =>$getList[0] ));
         }
         
         else
@@ -579,10 +715,16 @@ class DriverApiController extends Controller
                         $image->move($destinationPath, $img);
                     }
                     $userr->profile_img = $img;
+
+                       ////to get url 
+                         $a = trim($img, '[');
+                          $b = trim($a, ']');
+                        $getDetails = URL::to('/') . "/public/uploads/profile_image/" . trim($b, '"');
+                    
                 }
-
+       
                 $userr->save();
-
+                  
                 if (!$userr)
                 {
 
@@ -595,7 +737,7 @@ class DriverApiController extends Controller
                 return json_encode(array(
                     'success' => 200,
                     'message' => 'Successfully Updated',
-                    'image' => $img
+                    'image' => $getDetails
                 ));
 
             }
@@ -618,7 +760,7 @@ class DriverApiController extends Controller
         }
     }
 
-    public function uploadVehicleInfo(Request $request)
+    public function uploadVehicleInfold(Request $request)
     {
 
         $post = $request->all();
@@ -666,6 +808,61 @@ class DriverApiController extends Controller
         }
 
     }
+
+//////////////////////////////////////////////
+ public function uploadVehicleInfo(Request $request)
+    {
+
+        $post = $request->all();
+
+        if (!empty($post))
+        {
+            $check_Vinfo = $this
+                ->vehicle
+                ->getVehicleById($request['driver_id']);
+
+            if (!$check_Vinfo)
+            {
+                $userV_info = $this
+                    ->vehicle
+                    ->storeVehicleInfo($request);
+            }
+            else
+            {
+                $userV_info = $this
+                    ->vehicle
+                    ->updateVehicleInfo($request);
+            }
+
+            if (!empty($userV_info))
+            {
+
+                return response()->json(['success' => 200, 'message' => 'Vehicle information saved successfully.']);
+
+            }
+            else
+            {
+
+                DB::rollback();
+                return response()
+                    ->json(['success' => 500, 'message' => 'Vehicle information not saved']);
+            }
+
+        }
+        else
+        {
+
+            DB::rollback();
+            return response()
+                ->json(['success' => 500, 'message' => 'All Parameters Required']);
+        }
+
+    }
+
+
+
+
+
 
     public function vehicle_type(Request $request)
     {
@@ -867,6 +1064,83 @@ class DriverApiController extends Controller
             ));
         }
     }
+    ///////////////////////
+    public function allListing(Request $request)
+    {
+
+         $query = DB::table('tbl_job_listing')
+            ->select('tbl_job_listing.*','tbl_item_information.*','tbl_delivery_information.*')
+             ->join('tbl_item_information', 'tbl_item_information.listing_id', '=', 'tbl_job_listing.id')
+              ->join('tbl_delivery_information', 'tbl_delivery_information.listing_id', '=', 'tbl_job_listing.id')
+           ->where('tbl_job_listing.job_status', '=', 4)
+          // ->where('tbl_job_listing.bid_status', '=', 1)
+            ->where('tbl_job_listing.job_status', '!=', 6)
+            ->get();
+       //////////////////////////
+               //////get url for images
+            foreach ($query as $key => $value)
+            {
+                $getDetails1 = array();
+                if ($value->upload_photos == "[]" )
+                { 
+                   $getoneimg = "";
+                }
+                else
+                {
+                        $img = explode(',', $value->upload_photos);
+                    foreach ($img as $key => $getimg)
+                    {
+                        $a = trim($getimg, '[');
+                        $b = trim($a, ']');
+                        $getDetails1[0] = URL::to('/') . "/public/uploads/img/" . trim($b, '"');
+                       $getoneimg =  implode(" ",$getDetails1);
+                    } 
+
+                }
+                $getDetails[] = ['listing_id' => $value->listing_id,'customer_id' => $value->customer_id,'parcel_size'=> $value->parcel_size,'job_post_time' => date('h:i:s A',$value->job_post_time),'descriptive_title' => $value->descriptive_title, 'pick_up_location' => $value->pick_up_location , 'bid_status' => $value->bid_status,'bid_count' => $value->bid_count, 'drop_off_location' => $value->drop_off_location,'add_bonus'=> $value->add_bonus, 'estimate_price' => $value->estimate_price, 'express_listing' => $value->express_listing, 'job_status' => $value->job_status,'upload_photos' => $getoneimg];
+            }
+         ///////////////////////////   
+     if($getDetails)
+          {
+            return response()->json(["success" => 200, "message" => "Success", "job_list" => $getDetails, ]);
+        }
+              else
+            {
+
+                return json_encode(array(
+                    'success' => 500,
+                    'message' => 'Details not found'
+                ));
+
+            }
+        }
+        
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ////Completed bid detail//
     public function getCompletedBidList(Request $request)
     {

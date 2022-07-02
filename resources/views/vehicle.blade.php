@@ -40,12 +40,14 @@
                                             <thead>
                                                 <tr><th>S.No.</th>
                                                 <th>Driver Name</th> 
-                                                <th>Vechicle Make</th>
-                                                    <th>Vehicle Modal</th>
-                                                    <th>Vehicle Color</th> 
-                                                    <th>Vehicle Type</th> 
+                                                <th>Vechicle Name</th>
+                                                    <th>Modal</th>
+                                                    <th>Color</th> 
+                                                    <th>Type</th> 
                                                     <th>License No.</th>
-                                                  <th>License Image</th>
+                                                    
+                                                    <th>Front Image</th>
+                                                    <th>Back Image</th>
                                                     <th>Vehicle Image</th>
                                                   
                                                 </tr>
@@ -66,7 +68,14 @@
                                                     <td> {{$users->vechicle_color }} </td>
                                                     <td> {{$users->vechicle_type }} </td>
                                                 <td> {{$users->vechicle_license_plate }} </td>
-                                                <td> @if($users->upload_vehicle_image!='')<img src="{{URL::to('public/uploads/vehicle/'.$users->driver_license_front)}}" height="70" width="70" > @endif </td>
+
+                                              <td> @if($users->upload_vehicle_image!='')<img src="{{URL::to('public/uploads/vehicle/'.$users->driver_license_front)}}" height="70" width="70" > @endif </td>
+                                                
+                                        <td> @if($users->upload_vehicle_image!='')<img src="{{URL::to('public/uploads/vehicle/'.$users->driver_license_back)}}" height="70" width="70" > @endif </td>
+
+
+
+                                            
                                                 
                                                   <td> @if($users->upload_vehicle_image!='')<img src="{{URL::to('public/uploads/vehicle/'.$users->upload_vehicle_image)}}" height="70" width="70" > @endif </td>
 

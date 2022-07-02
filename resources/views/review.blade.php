@@ -61,7 +61,7 @@
                                                     <td> {{$users->name }} </td>
                                                     <td> {{$users->total_stars }} </td>
                                                     <td> {{$users->review_description }} </td>
-                                                    <td> {{$users->created_at }} </td>
+                                                    <td> {{date("d-M-Y", strtotime($users->created_at))}}</td>
 
 
                                                 </tr>

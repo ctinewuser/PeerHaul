@@ -104,11 +104,18 @@
                                             <div class="form-group">
                                                 <div class="row">
                                                    <label class="col-sm-2 control-label">Images</label>
-                                                   <div class="col-sm-10">
-                                                     @if($getjobDetails->upload_photos!='')
-                                                        <img src="{{url('public/uploads/profile_image/'.$getjobDetails->upload_photos)}}" height="70" width="70" >
-                                                         @endif 
+                                            
+
+                                                @if($getjobDetails->upload_photos!='')
+
+                                               @foreach(json_decode($getjobDetails->upload_photos, true) as $images)
+                                                   <div class="col-sm-2">           
+                                                        <img src="{{url('public/uploads/img/'.$images)}}" height="70" width="70" >
+                                                       
                                                    </div>
+                                              @endforeach
+                                                @endif 
+
                                                 </div>
                                             </div>
                                             <div class="form-group">

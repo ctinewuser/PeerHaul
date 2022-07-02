@@ -75,6 +75,18 @@
                             <p>Parcel Size List</p>
                         </a>
                     </li>
+                     <li class="nav-item @if($segment == 'fees-list'){{'active'}} @endif ">
+                        <a class="nav-link" href="{{url('fees-list')}}">
+                            <i class="nc-icon nc-money-coins"> </i>
+                            <p>PeerHaul Fee</p>
+                        </a>
+                    </li>
+                     <li class="nav-item @if($segment == 'transaction-list'){{'active'}} @endif ">
+                        <a class="nav-link" href="{{url('transaction-list')}}">
+                            <i class="nc-icon nc-caps-small"> </i>
+                            <p>Transaction History</p>
+                        </a>
+                    </li>
                       <li class="nav-item @if($segment == 'deadline-List'){{'active'}} @endif ">
                         <a class="nav-link" href="{{url('deadline-List')}}">
                             <i class="nc-icon nc-watch-time"> </i>

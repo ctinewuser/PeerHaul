@@ -56,9 +56,9 @@
                                                     <td> {{$i}}. </td>
                                                   
                                                     <td> {{$users->vehicle_name }} </td>
-                                                    <td> {{$users->created_at }} </td>
-<!--                                                   
-                                                    <td class="text-right">
+                                                    <td> {{date("d-M-Y", strtotime($users->created_at))}} </td>
+                                                    
+<!--                                      <td class="text-right">
 
                                                       <button class="btn btn-link btn-danger changeStatus" current-status="@if($users->status == 1) {{'0'}} @else {{'1'}} @endif" data-id="{{$users->id}}" title="Click to @if($users->status == 1){{'Activate'}} @else {{'Deactivate'}} @endif" changeFor="user" > @if($users->status == 1) {{'Active'}} @else {{'Deactive'}} @endif </button> 
                                                       
